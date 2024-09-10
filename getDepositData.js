@@ -2,11 +2,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const clusterLockUrl =
-  process.env.CLUSTER_LOCK_API_URL || "https://api.obol.tech/v1/lock";
+const clusterLockUrl = process.env.CLUSTER_LOCK_API_URL;
 
 // Fetch the cluster locks by config hash
-export async function getDepositData(configHashes) {
+export const getDepositData = async (configHashes) => {
   try {
     if (!configHashes || configHashes.length === 0) {
       throw new Error("No config hashes provided");
@@ -20,16 +19,15 @@ export async function getDepositData(configHashes) {
     const extractedData = extractDataFromLocks(
       clusterLocks.filter((lock) => lock !== null)
     );
-    // console.log("Extracted deposit data:", JSON.stringify(extractedData, null, 2));
 
     return extractedData;
   } catch (error) {
     console.error("Error in getDepositData:", error.message);
     return null;
   }
-}
+};
 
-async function fetchClusterLock(configHash) {
+const fetchClusterLock = async (configHash) => {
   try {
     const response = await fetch(`${clusterLockUrl}/${configHash}`);
     if (!response.ok) {
@@ -43,9 +41,9 @@ async function fetchClusterLock(configHash) {
     );
     return null;
   }
-}
+};
 
-function extractDataFromLocks(locks) {
+const extractDataFromLocks = (locks) => {
   const extractedData = [];
 
   locks.forEach((lock, index) => {
@@ -66,11 +64,4 @@ function extractDataFromLocks(locks) {
     }
   });
   return extractedData;
-}
-getDepositData().then((result) => {
-  if (result) {
-    console.log("Successfully fetched and processed deposit data");
-  } else {
-    console.log("Failed to fetch or process deposit data");
-  }
-});
+};
