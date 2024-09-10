@@ -5,8 +5,9 @@ import { uploadDataToArweave } from "./uploadDataToArweave.js";
 
 const DELAY = "30000";
 
-const fetchAndProcessData = async () => {
+const fetchAndStoreData = async () => {
   try {
+    // Fetch the list of whitelisted clusters and get the config hashes
     console.log("Fetching whitelisted clusters...");
     const configHashes = await getWhitelistedClusters();
 
@@ -16,6 +17,7 @@ const fetchAndProcessData = async () => {
 
     console.log("Whitelisted clusters config hashes:", configHashes);
 
+    // Fetch the deposit data from the cluster locks by config hash
     console.log("Fetching deposit data...");
     const depositDataSets = await getDepositData(configHashes);
 
@@ -38,13 +40,14 @@ const fetchAndProcessData = async () => {
       console.log("No deposit data fetched or processed");
     }
   } catch (error) {
-    console.error("Error in fetchAndProcessData function:", error.message);
+    console.error("Error in fetchAndStoreData function:", error.message);
   }
 };
 
+// The bot runs indefinitely every 30 seconds
 const runBot = async () => {
   while (true) {
-    await fetchAndProcessData();
+    await fetchAndStoreData();
     console.log("Waiting for 30 seconds before next fetch...");
     await scheduler.wait(DELAY);
   }

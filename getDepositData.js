@@ -4,7 +4,7 @@ dotenv.config();
 
 const clusterLockUrl = process.env.CLUSTER_LOCK_API_URL;
 
-// Fetch the cluster locks by config hash
+// Fetch the deposit data from the cluster locks by config hash
 export const getDepositData = async (configHashes) => {
   try {
     if (!configHashes || configHashes.length === 0) {
@@ -27,6 +27,7 @@ export const getDepositData = async (configHashes) => {
   }
 };
 
+// Fetch the cluster lock by config hash
 const fetchClusterLock = async (configHash) => {
   try {
     const response = await fetch(`${clusterLockUrl}/${configHash}`);
@@ -43,6 +44,7 @@ const fetchClusterLock = async (configHash) => {
   }
 };
 
+// Extract the deposit data from the cluster locks object
 const extractDataFromLocks = (locks) => {
   const extractedData = [];
 

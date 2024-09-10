@@ -5,7 +5,6 @@ import axios from "axios";
 
 dotenv.config();
 
-// Constants
 const IRYS_NETWORK = "devnet";
 const JSONBIN_URL = "https://api.jsonbin.io/v3/b/66ddb8e5e41b4d34e42c0909";
 const IRYS_GATEWAY = "https://gateway.irys.xyz";
@@ -36,7 +35,10 @@ const updateUrlsStorage = async (newUrl) => {
     await axios.put(JSONBIN_URL, { urls: urlList }, { headers });
     console.log("JSONbin storage updated with new Irys URL");
   } catch (error) {
-    console.error("Error updating JSONbin:", error.response?.data || error.message);
+    console.error(
+      "Error updating JSONbin:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -87,7 +89,7 @@ const uploadDataToArweave = async (depositDataSets) => {
       console.log("Transaction ID:", dataSetTransactionId);
 
       const dataSet = await getDataFromArweave(dataSetTransactionId);
-    //   console.log("Uploaded data set:", dataSet);
+      //   console.log("Uploaded data set:", dataSet);
 
       results.push({ dataSetTransactionId, dataSet });
     }
@@ -104,8 +106,4 @@ const uploadDataToArweave = async (depositDataSets) => {
   }
 };
 
-export {
-  uploadDataToArweave,
-  uploadDepositData,
-  getDataFromArweave,
-};
+export { uploadDataToArweave, uploadDepositData, getDataFromArweave };
