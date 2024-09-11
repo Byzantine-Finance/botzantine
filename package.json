@@ -13,7 +13,8 @@
     "@irys/sdk": "^0.2.11",
     "@supabase/supabase-js": "^2.45.3",
     "axios": "^1.7.7",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2"
   },
   "type": "module"
 }

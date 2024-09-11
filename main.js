@@ -2,6 +2,7 @@ import { getWhitelistedClusters } from "./getWhitelistedClusters.js";
 import { getDepositData } from "./getDepositData.js";
 import { scheduler } from "node:timers/promises";
 import { uploadDataToArweave } from "./uploadDataToArweave.js";
+import { updateDatabase } from "./updateDatabase.js";
 
 const DELAY = "30000";
 
@@ -12,7 +13,7 @@ const fetchAndStoreData = async () => {
     const configHashes = await getWhitelistedClusters();
 
     if (!configHashes || configHashes.length === 0) {
-      throw new Error("Failed to fetch config hashes or no hashes returned");
+      throw new Error("Failed to fetch config hashes or no available clusters");
     }
 
     console.log("Whitelisted clusters config hashes:", configHashes);
@@ -25,10 +26,20 @@ const fetchAndStoreData = async () => {
       console.log("Successfully fetched and processed deposit data:");
       console.log(JSON.stringify(depositDataSets, null, 2));
 
-      // Upload each deposit data set to Arweave separately to get one url per data set
+      // For each deposit data set
       for (const depositData of depositDataSets) {
         try {
-          await uploadDataToArweave([depositData]);
+          // Prepare data to upload, excluding configHash
+          const { configHash, lockHash, ...dataToUpload } = depositData;
+          const url = await uploadDataToArweave([dataToUpload]);
+
+          const updates = {
+            lock_hash: lockHash,
+            is_deposit_data_stored: true,
+            deposit_data_url: url,
+          };
+          // Store the updates in the database
+          await updateDatabase(updates, configHash);
         } catch (uploadError) {
           console.error(
             `Error uploading for deposit data: ${depositData}`,

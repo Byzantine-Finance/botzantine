@@ -5,15 +5,17 @@ dotenv.config();
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 // Fetch the list of whitelisted clusters from supabase and return a list of config hashes
 export const getWhitelistedClusters = async () => {
   try {
+    // Fetch config_hashes where is_deposit_data_stored is false
     const { data, error } = await supabase
       .from("whitelisted_clusters")
-      .select("config_hash");
+      .select("config_hash")
+      .is("is_deposit_data_stored", false);
 
     if (error) {
       throw error;

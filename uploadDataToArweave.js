@@ -6,10 +6,9 @@ import axios from "axios";
 dotenv.config();
 
 const IRYS_NETWORK = "devnet";
-const JSONBIN_URL = "https://api.jsonbin.io/v3/b/66ddb8e5e41b4d34e42c0909";
 const IRYS_GATEWAY = "https://gateway.irys.xyz";
 
-// Irys setup
+// Irys (Arweave bundler) setup
 const getIrys = async () => {
   const irys = new NodeIrys({
     network: IRYS_NETWORK,
@@ -19,28 +18,6 @@ const getIrys = async () => {
   });
   await irys.ready();
   return irys;
-};
-
-// JSONbin operations (can be another storage solution)
-const getJsonbinHeaders = () => ({
-  "Content-Type": "application/json",
-  "X-Master-Key": process.env.X_MASTER_KEY,
-});
-
-const updateUrlsStorage = async (newUrl) => {
-  try {
-    const headers = getJsonbinHeaders();
-    const { data } = await axios.get(JSONBIN_URL);
-    const urlList = [...(data.record.urls || []), newUrl];
-    await axios.put(JSONBIN_URL, { urls: urlList }, { headers });
-    console.log("JSONbin storage updated with new Irys URL");
-  } catch (error) {
-    console.error(
-      "Error updating JSONbin:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
 };
 
 // Irys operations
@@ -60,50 +37,19 @@ const getDataFromArweave = async (transactionId) => {
   }
 };
 
-const uploadDepositData = async (depositData) => {
+// Function called by main.js to upload data to Arweave
+const uploadDataToArweave = async (depositData) => { 
   try {
     const transactionId = await uploadToArweave(depositData, [
       { name: "dkg", value: "deposit_data" },
     ]);
     const dataSetUrl = `${IRYS_GATEWAY}/${transactionId}`;
     console.log(`New deposit data set uploaded ==> ${dataSetUrl}`);
-    await updateUrlsStorage(dataSetUrl);
-    return { dataSetTransactionId: transactionId };
+    return dataSetUrl;
   } catch (error) {
     console.error("Error uploading deposit data:", error);
     throw error;
   }
 };
 
-const uploadDataToArweave = async (depositDataSets) => {
-  // Ensure depositDataSets is an array
-  if (!Array.isArray(depositDataSets)) {
-    depositDataSets = [depositDataSets];
-  }
-
-  try {
-    const results = [];
-
-    for (const depositData of depositDataSets) {
-      const { dataSetTransactionId } = await uploadDepositData(depositData);
-      console.log("Transaction ID:", dataSetTransactionId);
-
-      const dataSet = await getDataFromArweave(dataSetTransactionId);
-      //   console.log("Uploaded data set:", dataSet);
-
-      results.push({ dataSetTransactionId, dataSet });
-    }
-
-    const { data } = await axios.get(JSONBIN_URL, {
-      headers: getJsonbinHeaders(),
-    });
-    console.log("Updated URL list in JSONbin:", data.record.urls);
-
-    return results;
-  } catch (error) {
-    console.error("Error in uploadDataToArweave function:", error);
-    throw error;
-  }
-};
-
-export { uploadDataToArweave, uploadDepositData, getDataFromArweave };
+export { uploadDataToArweave, getDataFromArweave };

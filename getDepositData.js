@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const clusterLockUrl = process.env.CLUSTER_LOCK_API_URL;
+const clusterLockUrl = process.env.OBOL_CLUSTER_LOCK_API_URL;
 
 // Fetch the deposit data from the cluster locks by config hash
 export const getDepositData = async (configHashes) => {
@@ -12,13 +12,20 @@ export const getDepositData = async (configHashes) => {
     }
 
     // Fetch cluster locks from Obol API
-    const clusterLocks = await Promise.all(configHashes.map(fetchClusterLock));
-
+    const clusterLocks = [];
+    const successfulHashes = []; 
+    const lockHashes = [];
+    for (const configHash of configHashes) {
+      const lock = await fetchClusterLock(configHash);
+      if (lock) {
+        clusterLocks.push(lock);
+        successfulHashes.push(configHash); // Store the successful configHash
+        lockHashes.push(lock.lock_hash);
+      }
+    }
     console.log("Fetched cluster locks by config hash:", clusterLocks);
 
-    const extractedData = extractDataFromLocks(
-      clusterLocks.filter((lock) => lock !== null)
-    );
+    const extractedData = extractDataFromLocks(clusterLocks, successfulHashes, lockHashes); // Pass successfulHashes
 
     return extractedData;
   } catch (error) {
@@ -34,10 +41,11 @@ const fetchClusterLock = async (configHash) => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+
     return await response.json();
   } catch (error) {
     console.error(
-      `Error fetching cluster lock for config hash ${configHash}:`,
+      `Cluster lock not found for config hash ${configHash}:`,
       error.message
     );
     return null;
@@ -45,7 +53,7 @@ const fetchClusterLock = async (configHash) => {
 };
 
 // Extract the deposit data from the cluster locks object
-const extractDataFromLocks = (locks) => {
+const extractDataFromLocks = (locks, successfulHashes, lockHashes) => {
   const extractedData = [];
 
   locks.forEach((lock, index) => {
@@ -56,6 +64,8 @@ const extractDataFromLocks = (locks) => {
             pubkey: validator.deposit_data.pubkey,
             signature: validator.deposit_data.signature,
             deposit_data_root: validator.deposit_data.deposit_data_root,
+            configHash: successfulHashes[index], 
+            lockHash: lockHashes[index],
           });
         } else {
           console.log(`No deposit_data found for validator ${vIndex}`);
