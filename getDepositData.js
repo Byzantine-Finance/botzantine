@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const clusterLockUrl = process.env.OBOL_CLUSTER_LOCK_API_URL;
+const clusterLockUrl = "https://api.obol.tech/lock/configHash/";
 
 // Fetch the deposit data from the cluster locks by config hash
 export const getDepositData = async (configHashes) => {
@@ -13,7 +13,7 @@ export const getDepositData = async (configHashes) => {
 
     // Fetch cluster locks from Obol API
     const clusterLocks = [];
-    const successfulHashes = []; 
+    const successfulHashes = [];
     const lockHashes = [];
     for (const configHash of configHashes) {
       const lock = await fetchClusterLock(configHash);
@@ -23,9 +23,12 @@ export const getDepositData = async (configHashes) => {
         lockHashes.push(lock.lock_hash);
       }
     }
-    console.log("Fetched cluster locks by config hash:", clusterLocks);
 
-    const extractedData = extractDataFromLocks(clusterLocks, successfulHashes, lockHashes); // Pass successfulHashes
+    const extractedData = extractDataFromLocks(
+      clusterLocks,
+      successfulHashes,
+      lockHashes
+    ); // Pass successfulHashes
 
     return extractedData;
   } catch (error) {
@@ -37,7 +40,7 @@ export const getDepositData = async (configHashes) => {
 // Fetch the cluster lock by config hash
 const fetchClusterLock = async (configHash) => {
   try {
-    const response = await fetch(`${clusterLockUrl}/${configHash}`);
+    const response = await fetch(clusterLockUrl + configHash);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -45,8 +48,7 @@ const fetchClusterLock = async (configHash) => {
     return await response.json();
   } catch (error) {
     console.error(
-      `Cluster lock not found for config hash ${configHash}:`,
-      error.message
+      `Cluster lock not found for config hash ${configHash} -> It means that the DKG has not been ran yet`
     );
     return null;
   }
@@ -64,7 +66,7 @@ const extractDataFromLocks = (locks, successfulHashes, lockHashes) => {
             pubkey: validator.deposit_data.pubkey,
             signature: validator.deposit_data.signature,
             deposit_data_root: validator.deposit_data.deposit_data_root,
-            configHash: successfulHashes[index], 
+            configHash: successfulHashes[index],
             lockHash: lockHashes[index],
           });
         } else {

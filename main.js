@@ -3,12 +3,14 @@ import { getDepositData } from "./getDepositData.js";
 import { scheduler } from "node:timers/promises";
 import { uploadDataToArweave } from "./uploadDataToArweave.js";
 import { updateDatabase } from "./updateDatabase.js";
+import { client } from "./discord.js";
 
-const DELAY = "30000";
+const DELAY = 30000;
 
 const fetchAndStoreData = async () => {
   try {
     // Fetch the list of whitelisted clusters and get the config hashes
+    console.log("========================================");
     console.log("Fetching whitelisted clusters...");
     const configHashes = await getWhitelistedClusters();
 
@@ -21,9 +23,10 @@ const fetchAndStoreData = async () => {
     // Fetch the deposit data from the cluster locks by config hash
     console.log("Fetching deposit data...");
     const depositDataSets = await getDepositData(configHashes);
+    console.log("Deposit data:", depositDataSets);
 
     if (depositDataSets && depositDataSets.length > 0) {
-      console.log("Successfully fetched and processed deposit data:");
+      console.log("-> Successfully fetched and processed deposit data:");
       console.log(JSON.stringify(depositDataSets, null, 2));
 
       // For each deposit data set
@@ -48,7 +51,7 @@ const fetchAndStoreData = async () => {
         }
       }
     } else {
-      console.log("No deposit data fetched or processed");
+      console.log("-> No deposit data fetched or processed");
     }
   } catch (error) {
     console.error("Error in fetchAndStoreData function:", error.message);
@@ -59,7 +62,7 @@ const fetchAndStoreData = async () => {
 const runBot = async () => {
   while (true) {
     await fetchAndStoreData();
-    console.log("Waiting for 30 seconds before next fetch...");
+    console.log(`Waiting for ${DELAY / 1000} seconds before next fetch...`);
     await scheduler.wait(DELAY);
   }
 };
