@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@irys/sdk": "^0.2.11",
+    "@obolnetwork/obol-sdk": "^2.0.1",
     "@supabase/supabase-js": "^2.45.3",
     "axios": "^1.7.7",
     "discord.js": "^14.16.1",

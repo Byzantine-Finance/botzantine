@@ -4,8 +4,12 @@ import { scheduler } from "node:timers/promises";
 import { uploadDataToArweave } from "./uploadDataToArweave.js";
 import { updateDatabase } from "./updateDatabase.js";
 import { client } from "./discord.js";
+import { DELAY } from "./constants/index.js";
+import {} from "./obol/createCluster.js";
 
-const DELAY = 30000;
+// Discord
+import { messageNewDKG } from "./discord/messageNewDKG.js";
+import { messageNewCluster } from "./discord/messageNewCluster.js";
 
 const fetchAndStoreData = async () => {
   try {
@@ -58,15 +62,25 @@ const fetchAndStoreData = async () => {
   }
 };
 
-// The bot runs indefinitely every 30 seconds
-const runBot = async () => {
+const operators = [
+  "0x1234567890abcdef1234567890abcdef12345678",
+  "0x9876543210fedcba9876543210fedcba98765432",
+  "0xabcdef1234567890abcdef1234567890abcdef1",
+  "0xfedcba9876543210fedcba9876543210fedcba98",
+];
+const configHash =
+  "0xce8834a1b4cf776f090d4411fa919a774b38b59fb8fdb40788f9fceb1385d3f8";
+
+const main = async () => {
   while (true) {
     await fetchAndStoreData();
+    await messageNewDKG(); // Call the new function
+    await messageNewCluster(operators, configHash);
     console.log(`Waiting for ${DELAY / 1000} seconds before next fetch...`);
     await scheduler.wait(DELAY);
   }
 };
 
-runBot().catch((error) => {
-  console.error("Bot crashed:", error);
+main().catch((error) => {
+  console.error("An error occurred:", error);
 });
