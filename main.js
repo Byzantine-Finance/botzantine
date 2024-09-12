@@ -1,6 +1,7 @@
-import { getDepositData } from "./obol/getDepositData.js";
+import { getDepositDataByLockHash } from "./obol/getDepositDataByLockHash.js";
+import { getLockByConfigHash } from "./obol/getLockByConfigHash.js";
+import { getEffectiveDvByLockHash } from "./obol/getEffectiveDvByLockHash.js";
 import { scheduler } from "node:timers/promises";
-import { uploadDataToArweave } from "./irys/uploadDataToArweave.js";
 import { DELAY, ALEXCANDRE_ID, LOGS_CHANNEL_ID } from "./constants/index.js";
 import { createCluster } from "./obol/createCluster.js";
 
@@ -16,7 +17,7 @@ import { client } from "./discord/discord.js";
 import { messageNewDKG } from "./discord/messageNewDKG.js";
 import { messageNewCluster } from "./discord/messageNewCluster.js";
 import { createPrivateChannel } from "./discord/createPrivateChannel.js";
-const fetchAndStoreData = async () => {
+const trackDvStatus = async () => {
   try {
     // Fetch the list of whitelisted clusters and get the config hashes
     console.log("========================================");
@@ -29,41 +30,39 @@ const fetchAndStoreData = async () => {
 
     console.log("Whitelisted clusters config hashes:", configHashes);
 
-    // Fetch the deposit data from the cluster locks by config hash
-    console.log("Fetching deposit data...");
-    const depositDataSets = await getDepositData(configHashes);
-    console.log("Deposit data:", depositDataSets);
+    // Check the status of the DV cluster
+    for (const configHash of configHashes) {
+      console.log(`Checking if DKG is performed for config hash ${configHash}...`);
 
-    if (depositDataSets && depositDataSets.length > 0) {
-      console.log("-> Successfully fetched and processed deposit data:");
-      console.log(JSON.stringify(depositDataSets, null, 2));
+      const lock = await getLockByConfigHash(configHash);
+      if (lock) {
+        // Update the status and lock_hash in database
+        const updates = {
+          lock_hash: lock.lock_hash,
+          dv_status: "2_DKG_performed",
+        };
+        await updateDatabase(updates, configHash);
 
-      // For each deposit data set
-      for (const depositData of depositDataSets) {
-        try {
-          // Prepare data to upload, excluding configHash
-          const { configHash, lockHash, ...dataToUpload } = depositData;
-          const url = await uploadDataToArweave([dataToUpload]);
+        // Check if the DV becomes effective and ready to run
+        console.log("Checking if the DV is effective...");
 
-          const updates = {
-            lock_hash: lockHash,
-            is_deposit_data_stored: true,
-            deposit_data_url: url,
-          };
-          // Store the updates in the database
-          await updateDatabase(updates, configHash);
-        } catch (uploadError) {
-          console.error(
-            `Error uploading for deposit data: ${depositData}`,
-            uploadError
-          );
+        const effectiveDV = await getEffectiveDvByLockHash(lock.lock_hash);
+        {
+          if (effectiveDV) {
+            // Update the status in database
+            await updateDatabase({ dv_status: "3_DV_effective" }, configHash);
+
+            // Fetch the deposit data from the cluster locks by config hash
+            console.log("Fetching deposit data...");
+
+            const depositData = await getDepositDataByLockHash(lock);
+            // TODO: use the depositData in the stake function or store it temporarily in the database
+          }
         }
       }
-    } else {
-      console.log("-> No deposit data fetched or processed");
     }
   } catch (error) {
-    console.error("Error in fetchAndStoreData function:", error.message);
+    console.error("Error in trackDvStatus function:", error.message);
   }
 };
 
@@ -124,7 +123,7 @@ const main = async () => {
   await scheduler.wait(2000);
   while (true) {
     // ------- Fetch and store data -------
-    await fetchAndStoreData();
+    await trackDvStatus();
 
     // ------- Detect new auction -------
     if (await detectNewAuction()) {

@@ -1,13 +1,13 @@
 import supabase from "./supabaseClient.js";
 
-// Fetch the list of whitelisted clusters from supabase and return a list of config hashes
+// Fetch the list of whitelisted clusters from database and return a list of config hashes
 export const getWhitelistedClusters = async () => {
   try {
-    // Fetch config_hashes where is_deposit_data_stored is false
+    // Fetch config_hashes where dv_status is 1_Cluster_proposed
     const { data, error } = await supabase
       .from("whitelisted_clusters")
       .select("config_hash")
-      .is("is_deposit_data_stored", false);
+      .eq("dv_status", "1_Cluster_proposed");
 
     if (error) {
       throw error;
