@@ -1,16 +1,16 @@
-import { client } from "../discord.js";
+import { client } from "./discord.js";
 import { LOGS_CHANNEL_ID, EMBED_COLOR } from "../constants/index.js";
 import { EmbedBuilder } from "discord.js";
 
-export const messageNewCluster = async (operators, configHash) => {
+export const messageNewCluster = async (config_hash, operators) => {
   const etherscanHoleskyUrl = "https://holesky.etherscan.io";
-  const byzantineClusterUrl = `https://operator.byzantine.fi/cluster/${configHash}`;
+  const byzantineClusterUrl = `https://operator.byzantine.fi/cluster/${config_hash}`;
 
   const operatorList = operators.map((op) => `- ${op}`).join("\n");
 
   const description = `A new cluster has been created!
 
-Config Hash: \`${configHash}\`
+Config Hash: \`${config_hash}\`
 
 Operators:
 ${operatorList}

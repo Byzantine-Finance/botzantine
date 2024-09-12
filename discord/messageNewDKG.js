@@ -1,4 +1,4 @@
-import { client } from "../discord.js";
+import { client } from "./discord.js";
 import { LOGS_CHANNEL_ID, EMBED_COLOR } from "../constants/index.js";
 import { EmbedBuilder } from "discord.js";
 

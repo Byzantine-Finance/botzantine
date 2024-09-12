@@ -1,12 +1,4 @@
-import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
-
-dotenv.config();
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+import supabase from "./supabaseClient.js";
 
 // Fetch the list of whitelisted clusters from supabase and return a list of config hashes
 export const getWhitelistedClusters = async () => {

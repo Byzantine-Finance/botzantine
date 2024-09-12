@@ -1,3 +1,9 @@
 export const LOGS_CHANNEL_ID = "1283754394416058388";
-export const DELAY = 30000;
-export const EMBED_COLOR = 0x702963;
+export const CLUSTER_SALON_ID = "1245339120579117076";
+export const DELAY = 10000;
+export const EMBED_COLOR = 0x702963; // Byzantine color
+
+export const BENOIT_ID = "277820409746030592";
+export const LIN_ID = "947575464803844176";
+export const ALEXCANDRE_ID = "692760299912036534";
+export const JONAS_ID = "323850788717854720";

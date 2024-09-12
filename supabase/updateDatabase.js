@@ -1,19 +1,10 @@
-import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
-
-dotenv.config();
-
-// supabase setup
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+import supabase from "./supabaseClient.js";
 
 const updateDatabase = async (updates, configHash) => {
   try {
     const { error } = await supabase
       .from("whitelisted_clusters")
-      .update(updates) 
+      .update(updates)
       .eq("config_hash", configHash);
 
     if (error) {

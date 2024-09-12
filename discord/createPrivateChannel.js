@@ -1,4 +1,22 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  ChannelType,
+  EmbedBuilder,
+} from "discord.js";
+
+import {
+  CLUSTER_SALON_ID,
+  BENOIT_ID,
+  LIN_ID,
+  ALEXCANDRE_ID,
+  JONAS_ID,
+  EMBED_COLOR,
+} from "../constants/index.js";
+import { client } from "./discord.js";
+
+import dotenv from "dotenv";
+dotenv.config();
 
 export const createPrivateChannelCommand = new SlashCommandBuilder()
   .setName("createprivatechannel")
@@ -47,7 +65,7 @@ export const handleCreatePrivateChannelCommand = async (interaction) => {
     });
     const channel = await interaction.guild.channels.create({
       name: `private-${users.map((user) => user.username).join("-")}`, //with all the users
-      type: 0, // 0 is for text channels
+      type: 0,
       parent: parentChannelId,
       permissionOverwrites: [
         {
@@ -76,5 +94,67 @@ export const handleCreatePrivateChannelCommand = async (interaction) => {
       content: "There was an error creating the private channel.",
       ephemeral: true,
     });
+  }
+};
+
+//add a function to create a private channel in the discord server, with parameters the config_hash and the operators
+// (we'll get the id of the operators based on their address, but rn we just hardcode a list of ID)
+
+export const createPrivateChannel = async (
+  config_hash,
+  operators,
+  number_dv
+) => {
+  const guild = await client.guilds.fetch(process.env.GUILD_ID);
+
+  const id_users = [BENOIT_ID];
+
+  try {
+    console.log(">>>>>>>>>> Creating private channel...", client.user);
+    console.log("and going to add the users", id_users);
+    const channel = await guild.channels.create({
+      name: `cluster-${number_dv}`,
+      parent: CLUSTER_SALON_ID,
+      type: ChannelType.GuildText,
+      permissionOverwrites: [
+        {
+          id: guild.id,
+          deny: [PermissionFlagsBits.ViewChannel],
+        },
+        //TODO: fix this
+        // ...id_users.map((userId) => ({
+        //   id: userId,
+        //   allow: [PermissionFlagsBits.ViewChannel],
+        // })),
+      ],
+    });
+
+    // console.log("Private channel created:", channel);
+    if (channel) {
+      const byzantineClusterUrl = `https://operator.byzantine.fi/cluster/${config_hash}`;
+      const operatorList = operators.map((op) => `- ${op}`).join("\n");
+
+      const description = `Welcome to the channel for the Byzantine DV${number_dv}!
+
+    We created this channel with the operators to facilitate communication between you.
+    Please use it to efficiently coordinate on the next steps.
+
+    Operators:
+    ${operatorList}
+
+    You can view the cluster here: ${byzantineClusterUrl}`;
+
+      const embed = new EmbedBuilder()
+        .setTitle("New Cluster Notification")
+        .setDescription(description)
+        .setColor(EMBED_COLOR);
+
+      const message = await channel.send({ embeds: [embed] });
+    }
+
+    return channel;
+  } catch (error) {
+    console.error("Error creating private channel:", error);
+    throw error;
   }
 };
