@@ -1,9 +1,15 @@
+// Obol
+import {
+  obolClient,
+  createObolCluster,
+  getObolClusterDefinition,
+  getObolClusterLock
+} from "./obol/obolSdk.js";
 import { getDepositDataByLockHash } from "./obol/getDepositDataByLockHash.js";
-import { getLockByConfigHash } from "./obol/getLockByConfigHash.js";
 import { getEffectiveDvByLockHash } from "./obol/getEffectiveDvByLockHash.js";
+
 import { scheduler } from "node:timers/promises";
 import { DELAY, ALEXCANDRE_ID, LOGS_CHANNEL_ID } from "./constants/index.js";
-import { createCluster } from "./obol/createCluster.js";
 
 // Supabase
 import { addNewClusterDB } from "./supabase/addNewClusterDB.js";
