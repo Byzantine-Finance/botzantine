@@ -11,10 +11,10 @@
   "description": "",
   "dependencies": {
     "@irys/sdk": "^0.2.11",
-    "@obolnetwork/obol-sdk": "^2.0.1",
-    "@supabase/supabase-js": "^2.45.3",
+    "@obolnetwork/obol-sdk": "2.1.0",
+    "@supabase/supabase-js": "2.45.6",
     "axios": "^1.7.7",
-    "discord.js": "^14.16.1",
+    "discord.js": "14.16.3",
     "dotenv": "^16.4.5",
     "jsonwebtoken": "^9.0.2"
   },
