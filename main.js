@@ -1,3 +1,5 @@
+import { scheduler } from "node:timers/promises";
+
 // Obol
 import {
   obolClient,
@@ -8,27 +10,29 @@ import {
 import { getDepositDataByLockHash } from "./obol/getDepositDataByLockHash.js";
 import { getEffectiveDvByLockHash } from "./obol/getEffectiveDvByLockHash.js";
 
-import { scheduler } from "node:timers/promises";
-import { DELAY, ALEXCANDRE_ID, LOGS_CHANNEL_ID } from "./constants/index.js";
-
 // Supabase
-import { addNewClusterDB } from "./supabase/addNewClusterDB.js";
-import { getWhitelistedClusters } from "./supabase/getWhitelistedClusters.js";
-import { updateDatabase } from "./supabase/updateDatabase.js";
-import { getNumberOfDV } from "./supabase/getNumberOfDV.js";
-import { updateDBwithChannelId } from "./supabase/updateDBwithChannelId.js";
+import { 
+  supabaseClient,
+  getNumberOfDV,
+  addNewClusterDB,
+  getWhitelistedDVInCreation,
+  updateDatabase,
+  updateDBwithChannelId
+} from "./supabase/supabaseSdk.js";
 
 // Discord
+import { DELAY, ALEXCANDRE_ID, LOGS_CHANNEL_ID } from "./discord/constant.js";
 import { client } from "./discord/discord.js";
 import { messageNewDKG } from "./discord/messageNewDKG.js";
 import { messageNewCluster } from "./discord/messageNewCluster.js";
 import { createPrivateChannel } from "./discord/createPrivateChannel.js";
+
 const trackDvStatus = async () => {
   try {
     // Fetch the list of whitelisted clusters and get the config hashes
     console.log("========================================");
     console.log("Fetching whitelisted clusters...");
-    const configHashes = await getWhitelistedClusters();
+    const configHashes = await getWhitelistedDVInCreation();
 
     if (!configHashes || configHashes.length === 0) {
       throw new Error("Failed to fetch config hashes or no available clusters");
