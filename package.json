@@ -10,8 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@irys/sdk": "^0.2.11",
-    "@obolnetwork/obol-sdk": "2.1.0",
+    "@obolnetwork/obol-sdk": "2.1.1",
     "@supabase/supabase-js": "2.45.6",
     "axios": "^1.7.7",
     "discord.js": "14.16.3",
