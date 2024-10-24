@@ -1,5 +1,5 @@
 import { client } from "./discord.js";
-import { LOGS_CHANNEL_ID, EMBED_COLOR } from "../constants/index.js";
+import { LOGS_CHANNEL_ID, EMBED_COLOR } from "./constant.js";
 import { EmbedBuilder } from "discord.js";
 
 export const messageNewDKG = async () => {

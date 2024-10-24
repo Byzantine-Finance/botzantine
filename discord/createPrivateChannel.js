@@ -12,7 +12,7 @@ import {
   ALEXCANDRE_ID,
   JONAS_ID,
   EMBED_COLOR,
-} from "../constants/index.js";
+} from "./constant.js";
 import { client } from "./discord.js";
 
 import dotenv from "dotenv";
