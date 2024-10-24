@@ -128,6 +128,13 @@ const actionsForNewAuction = async () => {
   console.log("> Private channel created for the new cluster", channel.id);
   await updateDBwithChannelId(config_hash, channel.id);
 };
+// Get Obol client
+const obolClientInst = await obolClient();
+// console.log("Obol client: ", obolClientInst);
+
+// Get the supabase client
+const supabaseClientInst = supabaseClient();
+// console.log("Supabase client: ", supabaseClientInst);
 
 const main = async () => {
   await scheduler.wait(2000);
