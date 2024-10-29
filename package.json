@@ -15,6 +15,7 @@
     "axios": "^1.7.7",
     "discord.js": "14.16.3",
     "dotenv": "^16.4.5",
+    "graphql-request": "^7.1.0",
     "jsonwebtoken": "^9.0.2"
   },
   "type": "module"
