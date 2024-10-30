@@ -68,20 +68,6 @@ export const getObolClusterDefinition = async (client, configHash) => {
 
 // Returns the cluster lock hash of a cluster's config hash
 export const getObolClusterLock = async (client, configHash) => {
-  try {
-    const lockFile = await client.getClusterLock(configHash);
-    return lockFile;
-  } catch (err) {
-    console.log(`Error getting cluster lock. The DKG for cluster for config hash ${configHash} has not been ran yet: `, err);
-  }
-};
-
-// Validates a cluster lock
-const validateObolClusterLock = async (client, clusterLock) => {
-  try {
-    const isValidLock = await client.validateClusterLock(clusterLock);
-    return isValidLock;
-  } catch (err) {
-    console.log(`Cluster lock ${clusterLock} is not valid: `, err);
-  }
+  const lockFile = await client.getClusterLock(configHash);
+  return lockFile;
 };

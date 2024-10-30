@@ -73,7 +73,7 @@ export const getWhitelistedDVInCreation = async (client) => {
     const configHashes = data.map((cluster) => cluster.config_hash);
     return configHashes;
   } catch (error) {
-    console.error("Error fetching whitelisted clusters:", error.message);
+    console.error("Error fetching cluster waiting for DKG:", error.message);
     return null;
   }
 };
