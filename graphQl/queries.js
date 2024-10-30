@@ -14,5 +14,8 @@ export const GetNewCreatedDVs = `query GetCreatedDVs($timestamp: BigInt!) {
                 nodeOpAddr
             }
         }
+        vault {
+            id
+        }
     }
 }`;

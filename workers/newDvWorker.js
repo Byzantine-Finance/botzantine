@@ -84,6 +84,7 @@ const newDVHandler = async () => {
         data.clusterCreateds[i].txHash,
         config_hash,
         parsedOpAddr,
+        data.clusterCreateds[i].vault.id,
         data.clusterCreateds[i].timestamp
       );
       console.log("> New cluster added to database");
