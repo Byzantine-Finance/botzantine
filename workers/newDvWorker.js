@@ -80,6 +80,7 @@ const newDVHandler = async () => {
       const parsedOpAddr = operators.map((op) => op.address);
       await addNewClusterDB(
         supabaseClientInst,
+        data.clusterCreateds[i].id,
         data.clusterCreateds[i].txHash,
         config_hash,
         parsedOpAddr,

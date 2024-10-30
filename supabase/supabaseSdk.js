@@ -40,11 +40,11 @@ export const getLastDVTimestamp = async (client) => {
 };
 
 // Add a newly created cluster to the database
-export const addNewClusterDB = async (client, tx_hash, config_hash, operators, timestamp) => {
+export const addNewClusterDB = async (client, id, tx_hash, config_hash, operators, timestamp) => {
   try {
     const { data, error } = await client
       .from("whitelisted_clusters")
-      .insert([{ tx_hash, config_hash, operators, timestamp }]);
+      .insert([{ id, tx_hash, config_hash, operators, timestamp }]);
 
     if (error) {
       console.error("Error adding new cluster to database:", error.message);
