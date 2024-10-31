@@ -1,144 +1,45 @@
-import { scheduler } from "node:timers/promises";
-
-// Obol
-import {
-  obolClient,
-  createObolCluster,
-  getObolClusterDefinition,
-  getObolClusterLock
-} from "./obol/obolSdk.js";
-import { getDepositDataByLockHash } from "./obol/getDepositDataByLockHash.js";
-import { getEffectiveDvByLockHash } from "./obol/getEffectiveDvByLockHash.js";
-
-// Supabase
+import { Worker } from "node:worker_threads";
 import { 
   supabaseClient,
-  getNumberOfDV,
-  addNewClusterDB,
-  getWhitelistedDVInCreation,
-  updateDatabase,
-  updateDBwithChannelId
+  getWhitelistedDVInActivation,
+  getDKGTimestamp
 } from "./supabase/supabaseSdk.js";
+import { obolClient } from "./obol/obolSdk.js";
 
-// Discord
-import { DELAY, ALEXCANDRE_ID, LOGS_CHANNEL_ID } from "./discord/constant.js";
-import { client } from "./discord/discord.js";
-import { messageNewDKG } from "./discord/messageNewDKG.js";
-import { messageNewCluster } from "./discord/messageNewCluster.js";
-import { createPrivateChannel } from "./discord/createPrivateChannel.js";
-
-const trackDvStatus = async () => {
-  try {
-    // Fetch the list of whitelisted clusters and get the config hashes
-    console.log("========================================");
-    console.log("Fetching whitelisted clusters...");
-    const configHashes = await getWhitelistedDVInCreation();
-
-    if (!configHashes || configHashes.length === 0) {
-      throw new Error("Failed to fetch config hashes or no available clusters");
-    }
-
-    console.log("Whitelisted clusters config hashes:", configHashes);
-
-    // Check the status of the DV cluster
-    for (const configHash of configHashes) {
-      console.log(`Checking if DKG is performed for config hash ${configHash}...`);
-
-      const lock = await getLockByConfigHash(configHash);
-      if (lock) {
-        // Update the status and lock_hash in database
-        const updates = {
-          lock_hash: lock.lock_hash,
-          dv_status: "2_DKG_performed",
-        };
-        await updateDatabase(updates, configHash);
-
-        // Check if the DV becomes effective and ready to run
-        console.log("Checking if the DV is effective...");
-
-        const effectiveDV = await getEffectiveDvByLockHash(lock.lock_hash);
-        {
-          if (effectiveDV) {
-            // Update the status in database
-            await updateDatabase({ dv_status: "3_DV_effective" }, configHash);
-
-            // Fetch the deposit data from the cluster locks by config hash
-            console.log("Fetching deposit data...");
-
-            const depositData = await getDepositDataByLockHash(lock);
-            // TODO: use the depositData in the stake function or store it temporarily in the database
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Error in trackDvStatus function:", error.message);
-  }
-};
-
-const operators = [
-  "0x1234567890abcdef1234567890abcdef12345678",
-  "0x9876543210fedcba9876543210fedcba98765432",
-  "0xabcdef1234567890abcdef1234567890abcdef1",
-  "0xfedcba9876543210fedcba9876543210fedcba98",
-];
-const configHash =
-  "0xce8834a1b4cf776f090d4411fa919a774b38b59fb8fdb40788f9fceb1385d3f8";
-
-const clusterDefinition = {
-  config_hash: configHash,
-  operators: operators,
-};
-
-const detectNewAuction = async () => {
-  // Check if a new auction is triggered
-  // Return true if a new auction is triggered, false otherwise
-  return true;
-};
-
-const actionsForNewAuction = async () => {
-  console.log(">>> Actions for new auction:");
-  let address_split_address = "0x0"; // await getAddressSplitContract(); // <-- Il faut que le contract soit deploy first
-  let eigen_pod_address = "0x0"; // await getEigenPodContract(); // <-- Pareil
-
-  let number_dv = await getNumberOfDV();
-
-  let tx_hash =
-    "0x43b44c88bd352997c79d73d1894d9bdefd1807e2134e563797b7c0e260123752"; //TODO: get the tx hash
-
-  let config_hash =
-    "0xfr0mde7ec7ecf776f090d4411fa919a774b38b59fb8fdb40788f985d3f8"; //todo, remove this
-
-  //TODO: uncomment, but only at the end, when we have the real config hash
-  // let config_hash = createCluster(
-  //   address_split_address,
-  //   eigen_pod_address,
-  //   operators,
-  //   number_dv
-  // );
-  // console.log("> New cluster created:", config_hash);
-
-  await addNewClusterDB(tx_hash, config_hash, operators);
-  console.log("> New cluster added to database");
-
-  await messageNewCluster(config_hash, operators);
-  console.log("> New cluster message sent to Discord");
-
-  const channel = await createPrivateChannel(config_hash, operators, number_dv);
-  console.log("> Private channel created for the new cluster", channel.id);
-  await updateDBwithChannelId(config_hash, channel.id);
-};
-// Get Obol client
-const obolClientInst = await obolClient();
-// console.log("Obol client: ", obolClientInst);
-
-// Get the supabase client
-const supabaseClientInst = supabaseClient();
-// console.log("Supabase client: ", supabaseClientInst);
+// const dvActivationTime = 24 * 60 * 60 * 1000; // 24h in milliseconds
+const dvActivationTime = 2000; // 2 seconds
 
 const main = async () => {
-  await scheduler.wait(2000);
-  while (true) {
+
+  // Create the clients required for the program
+  const supabaseClientInst = supabaseClient();
+  const obolClientInst = await obolClient();
+
+  await checkDVActivation(supabaseClientInst);
+
+  // Create the workers
+  const newDvWorker = new Worker("./workers/newDvWorker.js");
+  const newDkgWorker = new Worker("./workers/newDkgWorker.js");
+
+  // Print the new clusters information
+  newDvWorker.on('message', (message) => {
+    console.log(message);
+  });
+
+  // Activate the DV when the deposit data is available
+  newDkgWorker.on('message', async (message) => {
+    if (message.message === 'NEW DEPOSIT DATA AVAILABLE') {      
+      setTimeout(async () => {
+        try {
+          await activateDV(message.data);
+        } catch (error) {
+          console.error('Error in activating the DV:', error);
+        }
+      }, dvActivationTime);
+    }
+  });
+
+  /*while (true) {
     // ------- Fetch and store data -------
     await trackDvStatus();
 
@@ -166,8 +67,47 @@ const main = async () => {
     // ------- Delay before next fetch -------
     console.log(`Waiting for ${DELAY / 1000} seconds before next fetch...`);
     await scheduler.wait(DELAY);
-  }
+  }*/
 };
+
+// Backup function in case the program has to be reloaded
+const checkDVActivation = async (supabaseClientInst) => {
+
+  const configHashes = await getWhitelistedDVInActivation(supabaseClientInst);
+  if (!configHashes || configHashes.length === 0) {
+    console.log("No DV waiting for activation");
+    return;
+  }
+
+  // For each config hash, verify if the activation is still to be done
+  const currentDate = new Date();
+  for (const configHash of configHashes) {
+    const dkgTimestamp = await getDKGTimestamp(supabaseClientInst, configHash);
+    if (!dkgTimestamp) {
+      console.error("No DKG timestamp found for config hash: ", configHash);
+      continue;
+    }
+    
+    // Calculate the time elapsed since the DKG was performed
+    const dkgDate = new Date(dkgTimestamp);
+    const timeDifference = currentDate - dkgDate;
+    if (timeDifference < dvActivationTime) {
+      setTimeout(async () => {
+        try {
+          await activateDV(message.data);
+        } catch (error) {
+          console.error('Error in activating the DV:', error);
+        }
+      }, timeDifference);
+    } else {
+      console.log("No missing DVs to activate");
+    }
+  }
+}
+
+const activateDV = async (depositData) => {
+  console.log("Activating the DV ", depositData);
+}
 
 main().catch((error) => {
   console.error("An error occurred:", error);

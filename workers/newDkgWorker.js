@@ -28,15 +28,9 @@ const obolClientInst = await obolClient();
 const newDkgHandler = async () => {
   
   // Get all the config hashes of the DV needing to perform the DKG
-  let configHashes;
-  try {
-    configHashes = await getWhitelistedDVInCreation(supabaseClientInst);
-    if (!configHashes || configHashes.length === 0) {
-      console.log("All the DVs have already performed the DKG");
-      return;
-    }
-  } catch (error) {
-    console.error("Error in getting the DV in creation: ", error);
+  const configHashes = await getWhitelistedDVInCreation(supabaseClientInst);
+  if (!configHashes || configHashes.length === 0) {
+    console.log("All the DVs have already performed the DKG");
     return;
   }
   
