@@ -27,8 +27,8 @@ export const getNumberOfDV = async (client) => {
 export const getLastDVTimestamp = async (client) => {
   const { data, error } = await client
     .from("whitelisted_clusters")
-    .select("timestamp")
-    .order("timestamp", { ascending: false })
+    .select("dv_created_at")
+    .order("dv_created_at", { ascending: false })
     .limit(1)
     .single();
 
@@ -36,15 +36,15 @@ export const getLastDVTimestamp = async (client) => {
     console.error("Error fetching last timestamp:", error.message);
     return null;
   }
-  return data.timestamp;
+  return data.dv_created_at;
 };
 
 // Add a newly created cluster to the database
-export const addNewClusterDB = async (client, id, tx_hash, config_hash, operators, vault_addr, timestamp) => {
+export const addNewClusterDB = async (client, id, tx_hash, config_hash, operators, vault_addr, dv_created_at) => {
   try {
     const { data, error } = await client
       .from("whitelisted_clusters")
-      .insert([{ id, tx_hash, config_hash, operators, vault_addr, timestamp }]);
+      .insert([{ id, tx_hash, config_hash, operators, vault_addr, dv_created_at }]);
 
     if (error) {
       console.error("Error adding new cluster to database:", error.message);
@@ -86,14 +86,11 @@ export const updateDatabase = async (client, updates, configHash) => {
       .eq("config_hash", configHash);
 
     if (error) {
-      console.error("Error updating deposit_data_url:", error.message);
+      throw error;
     }
   } catch (error) {
-    console.error(
-      "Error storing the url:",
-      error.response?.data || error.message
-    );
-    throw error;
+    console.error("Error updating whitelisted_clusters table: ", error.message);
+    return null;
   }
 };
 

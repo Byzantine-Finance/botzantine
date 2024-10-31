@@ -1,5 +1,5 @@
 // Multithreading
-import { parentPort, workerData } from "node:worker_threads";
+import { parentPort } from "node:worker_threads";
 // Supabase
 import { 
   supabaseClient,
@@ -48,8 +48,9 @@ const newDkgHandler = async () => {
         // Update the status and lock_hash in database
         const updates = {
           lock_hash: lock.lock_hash,
-          deposit_data: lock.distributed_validators[0].deposit_data,
-          dv_status: "2_DKG_performed", 
+          validator_addresses: lock.distributed_validators.map(validator => validator.distributed_public_key),
+          dv_status: "2_DKG_performed",
+          dkg_detected_at: new Date().toISOString(),
         };
         await updateDatabase(supabaseClientInst, updates, configHash);
         parentPort.postMessage({
@@ -58,7 +59,7 @@ const newDkgHandler = async () => {
         });
       }
     } catch (error) {
-      console.error("Error in getting the cluster lock: ", error);
+      console.error("No cluster lock found. DKG not ran: ", error);
       continue;
     }
   }
