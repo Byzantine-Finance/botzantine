@@ -119,7 +119,7 @@ setInterval(() => {
 // Query the subgraph with query and variables
 const querySubgraph = async (query, variables) => {
   try {
-    const data = await request(subgraphEndpoint, query, variables);
+    const data = await request(subgraphEndpoint, query, variables, { timeout: 10000 });
     return data;
   } catch (error) {
     console.error("Error querying subgraph:", error);
