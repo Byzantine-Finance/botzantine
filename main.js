@@ -2,9 +2,13 @@ import { Worker } from "node:worker_threads";
 import { 
   supabaseClient,
   getWhitelistedDVInActivation,
-  getDKGTimestamp
+  getDKGTimestamp,
+  getClusterId
 } from "./supabase/supabaseSdk.js";
-import { obolClient } from "./obol/obolSdk.js";
+import { 
+  obolClient,
+  getObolClusterLock
+} from "./obol/obolSdk.js";
 
 // const dvActivationTime = 24 * 60 * 60 * 1000; // 24h in milliseconds
 const dvActivationTime = 2000; // 2 seconds
@@ -15,7 +19,9 @@ const main = async () => {
   const supabaseClientInst = supabaseClient();
   const obolClientInst = await obolClient();
 
-  await checkDVActivation(supabaseClientInst);
+  // Check if DVs need to be activated
+  // Edge case occurs when DKG is performed but the program has restarted before the DV activation
+  await checkDVActivation(supabaseClientInst, obolClientInst);
 
   // Create the workers
   const newDvWorker = new Worker("./workers/newDvWorker.js");
@@ -31,7 +37,7 @@ const main = async () => {
     if (message.message === 'NEW DEPOSIT DATA AVAILABLE') {      
       setTimeout(async () => {
         try {
-          await activateDV(message.data);
+          await activateDV(message.depositData, message.clusterId);
         } catch (error) {
           console.error('Error in activating the DV:', error);
         }
@@ -71,7 +77,7 @@ const main = async () => {
 };
 
 // Backup function in case the program has to be reloaded
-const checkDVActivation = async (supabaseClientInst) => {
+const checkDVActivation = async (supabaseClientInst, obolClientInst) => {
 
   const configHashes = await getWhitelistedDVInActivation(supabaseClientInst);
   if (!configHashes || configHashes.length === 0) {
@@ -92,21 +98,27 @@ const checkDVActivation = async (supabaseClientInst) => {
     const dkgDate = new Date(dkgTimestamp);
     const timeDifference = currentDate - dkgDate;
     if (timeDifference < dvActivationTime) {
-      setTimeout(async () => {
-        try {
-          await activateDV(message.data);
-        } catch (error) {
-          console.error('Error in activating the DV:', error);
-        }
-      }, timeDifference);
-    } else {
-      console.log("No missing DVs to activate");
+      try {
+        const lock = await getObolClusterLock(obolClientInst, configHash);
+        const clusterId = await getClusterId(supabaseClientInst, configHash);
+        setTimeout(async () => {
+          try {
+            await activateDV(lock.distributed_validators[0].deposit_data, clusterId);
+          } catch (error) {
+            console.error('Error in activating the DV:', error);
+          }
+        }, timeDifference);
+      } catch (error) {
+        console.error('Error in getting the cluster lock or cluster ID in back up function:', error);
+        continue;
+      }
     }
   }
 }
 
-const activateDV = async (depositData) => {
-  console.log("Activating the DV ", depositData);
+const activateDV = async (depositData, clusterId) => {
+  console.log("Deposit data: ", depositData);
+  console.log("Cluster ID: ", clusterId);
 }
 
 main().catch((error) => {

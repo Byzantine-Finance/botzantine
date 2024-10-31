@@ -117,6 +117,24 @@ export const getLastDVTimestamp = async (client) => {
   }
 };
 
+// Get the cluster ID from the config hash
+export const getClusterId = async (client, configHash) => {
+  try {
+    const { data, error } = await client
+      .from("whitelisted_clusters")
+      .select("id")
+      .eq("config_hash", configHash)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+    return data.id;
+  } catch (error) {
+    console.error("Error fetching cluster ID:", error.message);
+    return null;
+  }
+}
 
 // Fetch the list of whitelisted clusters in creation (waiting for DKG) from database and return a list of config hashes
 export const getWhitelistedDVInCreation = async (client) => {

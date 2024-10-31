@@ -4,6 +4,7 @@ import { parentPort } from "node:worker_threads";
 import { 
   supabaseClient,
   getWhitelistedDVInCreation,
+  getClusterId,
   updateDatabase
 } from '../supabase/supabaseSdk.js';
 // Obol
@@ -38,7 +39,8 @@ const newDkgHandler = async () => {
   for (const configHash of configHashes) {
     try {
       const lock = await getObolClusterLock(obolClientInst, configHash);
-      if (lock !== undefined) {
+      const clusterId = await getClusterId(supabaseClientInst, configHash);
+      if (lock !== undefined && clusterId !== undefined) {
         // Update the status and lock_hash in database
         const updates = {
           lock_hash: lock.lock_hash,
@@ -49,7 +51,8 @@ const newDkgHandler = async () => {
         await updateDatabase(supabaseClientInst, updates, configHash);
         parentPort.postMessage({
           message: 'NEW DEPOSIT DATA AVAILABLE',
-          data: lock.distributed_validators[0].deposit_data
+          depositData: lock.distributed_validators[0].deposit_data,
+          clusterId: clusterId
         });
       }
     } catch (error) {
