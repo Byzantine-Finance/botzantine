@@ -136,6 +136,25 @@ export const getClusterId = async (client, configHash) => {
   }
 }
 
+// Get the vault address from the config hash
+export const getVaultAddress = async (client, configHash) => {
+  try {
+    const { data, error } = await client
+      .from("whitelisted_clusters")
+      .select("vault_addr")
+      .eq("config_hash", configHash)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+    return data.vault_addr;
+  } catch (error) {
+    console.error("Error fetching vault address:", error.message);
+    return null;
+  }
+}
+
 // Fetch the list of whitelisted clusters in creation (waiting for DKG) from database and return a list of config hashes
 export const getWhitelistedDVInCreation = async (client) => {
   try {

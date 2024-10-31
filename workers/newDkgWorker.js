@@ -5,6 +5,7 @@ import {
   supabaseClient,
   getWhitelistedDVInCreation,
   getClusterId,
+  getVaultAddress,
   updateDatabase
 } from '../supabase/supabaseSdk.js';
 // Obol
@@ -40,8 +41,9 @@ const newDkgHandler = async () => {
     try {
       const lock = await getObolClusterLock(obolClientInst, configHash);
       const clusterId = await getClusterId(supabaseClientInst, configHash);
-      if (lock !== undefined && clusterId !== undefined) {
-        // Update the status and lock_hash in database
+      const vaultAddress = await getVaultAddress(supabaseClientInst, configHash);
+      if (lock !== undefined && clusterId !== undefined && vaultAddress !== undefined) {
+        // Update the database
         const updates = {
           lock_hash: lock.lock_hash,
           validator_addresses: lock.distributed_validators.map(validator => validator.distributed_public_key),
@@ -51,8 +53,10 @@ const newDkgHandler = async () => {
         await updateDatabase(supabaseClientInst, updates, configHash);
         parentPort.postMessage({
           message: 'NEW DEPOSIT DATA AVAILABLE',
+          configHash: configHash,
           depositData: lock.distributed_validators[0].deposit_data,
-          clusterId: clusterId
+          clusterId: clusterId,
+          vaultAddress: vaultAddress
         });
       }
     } catch (error) {
